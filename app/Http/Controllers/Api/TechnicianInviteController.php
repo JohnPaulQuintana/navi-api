@@ -10,45 +10,55 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
-use Carbon\Carbon;
 
 class TechnicianInviteController extends Controller
 {
     use ApiResponse;
 
     public function devices()
-{
-    $devices = User::query()
-        ->where('role', '!=', 'admin')
-        ->latest()
-        ->get()
-        ->map(fn ($user) => [
-            'id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'role' => ucfirst($user->role),
-            'status' => $user->is_active ? 'Connected' : 'Offline',
-            'paired_at' => $user->updated_at->format('M d, Y h:i A'),
-        ]);
+    {
+        $devices = User::query()
+            ->where('role', '!=', 'admin')
+            ->latest()
+            ->get()
+            ->map(fn ($user) => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => ucfirst($user->role),
+                'status' => $user->is_active ? 'Connected' : 'Offline',
+                'paired_at' => $user->updated_at->format('M d, Y h:i A'),
+            ]);
 
-    return $this->success($devices);
-}
+        return $this->success($devices);
+    }
 
     public function store(Request $request)
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255'],
         ]);
 
+        $email = $data['email'] ?? null;
+
+        if (empty($email)) {
+            do {
+                $email = 'tech-'.Str::lower(Str::random(12)).'@local.device';
+            } while (
+                TechnicianInvite::where('email', $email)->exists() ||
+                User::where('email', $email)->exists()
+            );
+        }
+
         // Remove any existing active invite for this email
-        TechnicianInvite::where('email', $data['email'])
+        TechnicianInvite::where('email', $email)
             ->whereNull('used_at')
             ->delete();
 
         $invite = TechnicianInvite::create([
             'name' => $data['name'],
-            'email' => $data['email'],
+            'email' => $email,
             'token' => Str::uuid()->toString(),
             'expires_at' => now()->addMinutes(5),
         ]);
