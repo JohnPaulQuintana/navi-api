@@ -140,11 +140,12 @@ class VehicleController extends Controller
                     continue;
                 }
 
-                VehiclePart::create([
+                DB::table('vehicle_parts')->insert([
                     'vehicle_id' => $vehicle->id,
                     'part_name' => $part['name'],
                     'price' => $part['price'] ?: null,
-                    'created_at' => $data['date']
+                    'created_at' => $data['date'].' 00:00:00',
+                    'updated_at' => $data['date'].' 00:00:00',
                 ]);
             }
         });
