@@ -165,14 +165,17 @@ class VehicleController extends Controller
 
         $timeline = $vehicle->parts
             ->groupBy(fn ($part) => $part->created_at->format('Y-m-d'))
-            ->map(function ($parts, $date) use ($vehicle, $useVehicleServiceDate) {
+            ->map(function ($parts, $date) use ($vehicle) {
 
-                $displayDate = $useVehicleServiceDate
-                    ? $vehicle->service_date
-                    : $date;
+                // Check if THIS timeline group is the initial service
+                $isInitialService = $parts->every(function ($part) use ($vehicle) {
+                    return $part->created_at->toDateString() === $vehicle->created_at->toDateString();
+                });
 
                 return [
-                    'date' => $displayDate,
+                    'date' => $isInitialService
+                        ? $vehicle->service_date
+                        : $date,
 
                     'total_amount' => $parts->sum('price'),
 
