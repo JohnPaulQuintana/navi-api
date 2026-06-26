@@ -10,7 +10,8 @@ class VehiclePart extends Model
         'vehicle_id',
         'part_name',
         'price',
-        'created_at'
+        'created_at',
+        'updated_at'
     ];
 
     public function vehicle()

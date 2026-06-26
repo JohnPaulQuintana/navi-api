@@ -226,6 +226,7 @@ class VehicleController extends Controller
         }
 
         $timeline = $vehicle->parts
+            ->sortByDesc('created_at')
             ->groupBy(fn ($part) => $part->created_at->format('Y-m-d'))
             ->map(function ($parts, $date) {
                 return [
@@ -235,7 +236,7 @@ class VehicleController extends Controller
                         'name' => $part->part_name,
                         'price' => $part->price,
                         'created_at' => $part->created_at,
-                    ]),
+                    ])->values(),
                     'total_amount' => $parts->sum('price'),
                 ];
             })
@@ -251,6 +252,7 @@ class VehicleController extends Controller
     {
         $data = $request->validate([
             'vehicle_id' => ['required'],
+            'serviceDate' => ['nullable'],
             'parts' => ['array'],
             'parts.*.name' => ['required'],
             'parts.*.price' => ['nullable'],
@@ -267,6 +269,12 @@ class VehicleController extends Controller
                     'vehicle_id' => $data['vehicle_id'],
                     'part_name' => $part['name'],
                     'price' => $part['price'] ?: null,
+                    'created_at' => ! empty($data['serviceDate'])
+                        ? $data['serviceDate'].' 00:00:00'
+                        : now(),
+                    'updated_at' => ! empty($data['serviceDate'])
+                        ? $data['serviceDate'].' 00:00:00'
+                        : now(),
                 ]);
             }
         });
