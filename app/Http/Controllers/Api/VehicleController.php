@@ -159,24 +159,29 @@ class VehicleController extends Controller
         $vehicle = Vehicle::with('parts')
             ->findOrFail($id);
 
+        $useVehicleServiceDate = $vehicle->parts->every(function ($part) use ($vehicle) {
+            return $part->created_at->toDateString() === $vehicle->created_at->toDateString();
+        });
+
         $timeline = $vehicle->parts
-            ->groupBy(
-                fn ($part) => $part->created_at->format('Y-m-d')
-            )
-            ->map(function ($parts, $date) {
+            ->groupBy(fn ($part) => $part->created_at->format('Y-m-d'))
+            ->map(function ($parts, $date) use ($vehicle, $useVehicleServiceDate) {
+
+                $displayDate = $useVehicleServiceDate
+                    ? $vehicle->service_date
+                    : $date;
+
                 return [
-                    'date' => $date,
+                    'date' => $displayDate,
 
                     'total_amount' => $parts->sum('price'),
 
-                    'parts' => $parts->map(
-                        fn ($part) => [
-                            'id' => $part->id,
-                            'name' => $part->part_name,
-                            'price' => $part->price,
-                            'created_at' => $part->created_at,
-                        ]
-                    )->values(),
+                    'parts' => $parts->map(fn ($part) => [
+                        'id' => $part->id,
+                        'name' => $part->part_name,
+                        'price' => $part->price,
+                        'created_at' => $part->created_at,
+                    ])->values(),
                 ];
             })
             ->sortByDesc('date')
