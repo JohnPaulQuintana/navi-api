@@ -144,6 +144,7 @@ class VehicleController extends Controller
                     'vehicle_id' => $vehicle->id,
                     'part_name' => $part['name'],
                     'price' => $part['price'] ?: null,
+                    'created_at' => $data['date']
                 ]);
             }
         });
@@ -165,17 +166,14 @@ class VehicleController extends Controller
 
         $timeline = $vehicle->parts
             ->groupBy(fn ($part) => $part->created_at->format('Y-m-d'))
-            ->map(function ($parts, $date) use ($vehicle) {
+            ->map(function ($parts, $date) use ($vehicle, $useVehicleServiceDate) {
 
-                // Check if THIS timeline group is the initial service
-                $isInitialService = $parts->every(function ($part) use ($vehicle) {
-                    return $part->created_at->toDateString() === $vehicle->created_at->toDateString();
-                });
+                $displayDate = $useVehicleServiceDate
+                    ? $vehicle->service_date
+                    : $date;
 
                 return [
-                    'date' => $isInitialService
-                        ? $vehicle->service_date
-                        : $date,
+                    'date' => $displayDate,
 
                     'total_amount' => $parts->sum('price'),
 
