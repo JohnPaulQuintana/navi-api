@@ -37,6 +37,8 @@ Route::middleware([
         [VehicleController::class, 'show']
     );
 
+    Route::put('/vehicles/{vehicle}', [VehicleController::class, 'update']);
+
     Route::post(
         '/vehicles',
         [VehicleController::class, 'store']

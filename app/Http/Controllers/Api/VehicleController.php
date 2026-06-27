@@ -284,4 +284,22 @@ class VehicleController extends Controller
             'Vehicle history created successfully'
         );
     }
+
+    public function update(Request $request, Vehicle $vehicle)
+    {
+        $validated = $request->validate([
+            'owner_name' => ['required', 'string', 'max:255'],
+            'address' => ['nullable', 'string'],
+            'plate_number' => ['required', 'string', 'max:50'],
+            'vehicle_name' => ['required', 'string', 'max:255'],
+        ]);
+
+        $vehicle->update($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Vehicle updated successfully.',
+            'data' => $vehicle->fresh(),
+        ]);
+    }
 }
